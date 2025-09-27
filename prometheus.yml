@@ -18,16 +18,18 @@ scrape_configs:
 
   - job_name: 'notrus-api'
     static_configs:
-      - targets: ['https://api.notrus.ai']
+      - targets: ['api.notrus.ai:443']
     metrics_path: '/metrics'
     scrape_interval: 15s
     scrape_timeout: 5s
+    scheme: https
 
   - job_name: 'notrus-web'
     static_configs:
-      - targets: ['https://dashboard.notrus.ai']
+      - targets: ['dashboard.notrus.ai:443']
     metrics_path: '/metrics'
     scrape_interval: 15s
     scrape_timeout: 5s
+    scheme: https
     # Allow connection failures when dev server is not running
     honor_labels: true
