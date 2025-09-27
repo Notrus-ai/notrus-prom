@@ -18,13 +18,14 @@ scrape_configs:
 
   - job_name: 'notrus-api'
     static_configs:
-      - targets: ['${NOTRUS_API_TARGET}']
+      - targets: ['https://api.notrus.ai']
     metrics_path: '/metrics'
-    scrape_interval: 5s
+    scrape_interval: 15s
+    scrape_timeout: 5s
 
   - job_name: 'notrus-web'
     static_configs:
-      - targets: ['${NOTRUS_WEB_TARGET}']
+      - targets: ['https://dashboard.notrus.ai']
     metrics_path: '/metrics'
     scrape_interval: 15s
     scrape_timeout: 5s
