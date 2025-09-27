@@ -8,8 +8,7 @@ rule_files:
 alerting:
   alertmanagers:
     - static_configs:
-        - targets:
-          - alertmanager:9093
+        - targets: ['notrus-prom-alertmanager.railway.internal:9093']
 
 scrape_configs:
   - job_name: 'prometheus'
@@ -23,13 +22,22 @@ scrape_configs:
     scrape_interval: 15s
     scrape_timeout: 5s
     scheme: https
+    honor_labels: true
 
   - job_name: 'notrus-web'
     static_configs:
       - targets: ['dashboard.notrus.ai:443']
-    metrics_path: '/metrics'
+    metrics_path: '/'
     scrape_interval: 15s
     scrape_timeout: 5s
     scheme: https
-    # Allow connection failures when dev server is not running
+    honor_labels: true
+
+  - job_name: 'notrus-webhook'
+    static_configs:
+      - targets: ['api.notrus.ai:443']
+    metrics_path: '/webhook/health'
+    scrape_interval: 15s
+    scrape_timeout: 5s
+    scheme: https
     honor_labels: true
