@@ -1,0 +1,33 @@
+groups:
+  - name: uptime.rules
+    rules:
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.instance }} is down"
+          description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 1 minute."
+
+  - name: application.rules
+    rules:
+      - alert: NotrusAPIDown
+        expr: up{job="notrus-api"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: notrus-api
+        annotations:
+          summary: "Notrus API is down"
+          description: "The Notrus API service has been down for more than 30 seconds."
+
+      - alert: NotrusWebDown
+        expr: up{job="notrus-web"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: notrus-web
+        annotations:
+          summary: "Notrus Web is down"
+          description: "The Notrus Web service has been down for more than 30 seconds."

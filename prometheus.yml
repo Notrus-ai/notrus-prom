@@ -1,0 +1,32 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "alert_rules.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'notrus-api'
+    static_configs:
+      - targets: ['${NOTRUS_API_TARGET}']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+
+  - job_name: 'notrus-web'
+    static_configs:
+      - targets: ['${NOTRUS_WEB_TARGET}']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+    scrape_timeout: 5s
+    # Allow connection failures when dev server is not running
+    honor_labels: true
