@@ -24,19 +24,19 @@ scrape_configs:
     scheme: https
     honor_labels: true
 
-  - job_name: 'notrus-web'
-    static_configs:
-      - targets: ['dashboard.notrus.ai:443']
-    metrics_path: '/'
-    scrape_interval: 15s
-    scrape_timeout: 5s
-    scheme: https
-    honor_labels: true
+  # - job_name: 'notrus-web'
+  #   static_configs:
+  #     - targets: ['dashboard.notrus.ai:443']
+  #   metrics_path: '/'
+  #   scrape_interval: 15s
+  #   scrape_timeout: 5s
+  #   scheme: https
+  #   honor_labels: true
 
   - job_name: 'notrus-webhook'
     static_configs:
       - targets: ['api.notrus.ai:443']
-    metrics_path: '/webhook/health'
+    metrics_path: '/webhook/metrics'
     scrape_interval: 15s
     scrape_timeout: 5s
     scheme: https
