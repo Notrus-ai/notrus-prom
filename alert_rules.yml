@@ -22,15 +22,15 @@ groups:
           summary: "Notrus API is down"
           description: "The Notrus API service has been down for more than 30 seconds."
 
-      - alert: NotrusWebDown
-        expr: up{job="notrus-web"} == 0
-        for: 30s
-        labels:
-          severity: critical
-          service: notrus-web
-        annotations:
-          summary: "Notrus Web is down"
-          description: "The Notrus Web service has been down for more than 30 seconds."
+      # - alert: NotrusWebDown
+      #   expr: up{job="notrus-web"} == 0
+      #   for: 30s
+      #   labels:
+      #     severity: critical
+      #     service: notrus-web
+      #   annotations:
+      #     summary: "Notrus Web is down"
+      #     description: "The Notrus Web service has been down for more than 30 seconds."
 
       - alert: NotrusWebhookDown
         expr: up{job="notrus-webhook"} == 0
