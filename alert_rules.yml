@@ -19,18 +19,8 @@ groups:
           severity: critical
           service: notrus-api
         annotations:
-          summary: "Notrus API is down"
-          description: "The Notrus API service has been down for more than 30 seconds."
-
-      # - alert: NotrusWebDown
-      #   expr: up{job="notrus-web"} == 0
-      #   for: 30s
-      #   labels:
-      #     severity: critical
-      #     service: notrus-web
-      #   annotations:
-      #     summary: "Notrus Web is down"
-      #     description: "The Notrus Web service has been down for more than 30 seconds."
+          summary: "🔴 Notrus API is DOWN"
+          description: "The Notrus API service has been down for more than 30 seconds. Immediate action required!"
 
       - alert: NotrusWebhookDown
         expr: up{job="notrus-webhook"} == 0
@@ -39,6 +29,194 @@ groups:
           severity: critical
           service: notrus-webhook
         annotations:
-          summary: "Notrus Webhook is down"
+          summary: "🔴 Notrus Webhook is DOWN"
           description: "The Notrus Webhook service has been down for more than 30 seconds."
+
+      - alert: NotrusAPIHighLatency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="notrus-api"}[5m])) by (le)) > 2
+        for: 2m
+        labels:
+          severity: warning
+          service: notrus-api
+        annotations:
+          summary: "⚠️ High API Latency Detected"
+          description: "95th percentile latency is above 2 seconds for the last 2 minutes. Current value: {{ $value | printf \"%.2f\" }}s"
+
+      - alert: NotrusAPIHighErrorRate
+        expr: sum(rate(http_requests_total{job="notrus-api", status=~"5.."}[5m])) / sum(rate(http_requests_total{job="notrus-api"}[5m])) * 100 > 5
+        for: 2m
+        labels:
+          severity: critical
+          service: notrus-api
+        annotations:
+          summary: "🔴 High Error Rate in Notrus API"
+          description: "Error rate is above 5% for the last 2 minutes. Current error rate: {{ $value | printf \"%.2f\" }}%"
+
+      - alert: NotrusAPISlowRequests
+        expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job="notrus-api"}[5m])) by (le)) > 5
+        for: 3m
+        labels:
+          severity: error
+          service: notrus-api
+        annotations:
+          summary: "🟠 Slow API Requests Detected"
+          description: "99th percentile latency exceeds 5 seconds. This indicates severe performance degradation."
+
+  - name: resource.rules
+    rules:
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: notrus-infrastructure
+        annotations:
+          summary: "⚠️ High CPU Usage"
+          description: "CPU usage is above 85% on {{ $labels.instance }}. Current usage: {{ $value | printf \"%.2f\" }}%"
+
+      - alert: CriticalCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 95
+        for: 2m
+        labels:
+          severity: critical
+          service: notrus-infrastructure
+        annotations:
+          summary: "🔴 Critical CPU Usage"
+          description: "CPU usage is above 95% on {{ $labels.instance }}. Immediate action required!"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: notrus-infrastructure
+        annotations:
+          summary: "⚠️ High Memory Usage"
+          description: "Memory usage is above 85% on {{ $labels.instance }}. Current usage: {{ $value | printf \"%.2f\" }}%"
+
+      - alert: CriticalMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+          service: notrus-infrastructure
+        annotations:
+          summary: "🔴 Critical Memory Usage"
+          description: "Memory usage is above 95% on {{ $labels.instance }}. System may become unresponsive!"
+
+      - alert: HighDiskUsage
+        expr: (1 - (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: notrus-infrastructure
+        annotations:
+          summary: "⚠️ High Disk Usage"
+          description: "Disk usage is above 80% on {{ $labels.instance }}. Current usage: {{ $value | printf \"%.2f\" }}%"
+
+      - alert: CriticalDiskUsage
+        expr: (1 - (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})) * 100 > 90
+        for: 2m
+        labels:
+          severity: critical
+          service: notrus-infrastructure
+        annotations:
+          summary: "🔴 Critical Disk Usage"
+          description: "Disk usage is above 90% on {{ $labels.instance }}. Disk space almost exhausted!"
+
+  - name: container.rules
+    rules:
+      - alert: ContainerHighCPU
+        expr: sum(rate(container_cpu_usage_seconds_total{name!=""}[3m])) by (name) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: notrus-containers
+        annotations:
+          summary: "⚠️ Container High CPU"
+          description: "Container {{ $labels.name }} CPU usage is above 80%. Current: {{ $value | printf \"%.2f\" }}%"
+
+      - alert: ContainerHighMemory
+        expr: (container_memory_usage_bytes{name!=""} / container_spec_memory_limit_bytes{name!=""}) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: notrus-containers
+        annotations:
+          summary: "⚠️ Container High Memory"
+          description: "Container {{ $labels.name }} memory usage is above 85%. Current: {{ $value | printf \"%.2f\" }}%"
+
+      - alert: ContainerRestarting
+        expr: increase(container_restart_count{name!=""}[1h]) > 3
+        for: 0m
+        labels:
+          severity: error
+          service: notrus-containers
+        annotations:
+          summary: "🟠 Container Restarting Frequently"
+          description: "Container {{ $labels.name }} has restarted {{ $value }} times in the last hour."
+
+      - alert: ContainerKilled
+        expr: time() - container_last_seen{name!=""} > 60
+        for: 0m
+        labels:
+          severity: critical
+          service: notrus-containers
+        annotations:
+          summary: "🔴 Container Killed"
+          description: "Container {{ $labels.name }} was killed or stopped unexpectedly."
+
+  - name: database.rules
+    rules:
+      - alert: DatabaseConnectionPoolExhausted
+        expr: pg_stat_activity_count{datname="notrus"} / pg_settings_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: notrus-database
+        annotations:
+          summary: "⚠️ Database Connection Pool Nearing Limit"
+          description: "PostgreSQL connection pool is at {{ $value | printf \"%.0f\" }}% capacity."
+
+      - alert: DatabaseSlowQueries
+        expr: rate(pg_stat_statements_mean_time_seconds{datname="notrus"}[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: notrus-database
+        annotations:
+          summary: "⚠️ Slow Database Queries"
+          description: "Average query execution time is above 1 second."
+
+      - alert: DatabaseDown
+        expr: pg_up == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: notrus-database
+        annotations:
+          summary: "🔴 Database is DOWN"
+          description: "PostgreSQL database is unreachable. All services may be affected!"
+
+  - name: network.rules
+    rules:
+      - alert: HighNetworkTraffic
+        expr: sum(rate(node_network_receive_bytes_total[5m])) by (instance) / 1024 / 1024 > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: notrus-infrastructure
+        annotations:
+          summary: "⚠️ High Network Traffic"
+          description: "Network receive traffic is above 100 MB/s on {{ $labels.instance }}."
+
+      - alert: NetworkErrors
+        expr: rate(node_network_receive_errs_total[5m]) + rate(node_network_transmit_errs_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: error
+          service: notrus-infrastructure
+        annotations:
+          summary: "🟠 Network Errors Detected"
+          description: "Network errors detected on {{ $labels.instance }}. This may indicate connectivity issues."
 
